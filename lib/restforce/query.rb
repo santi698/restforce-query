@@ -8,9 +8,9 @@ module Restforce
   # Chain calls to: select, where, distinct, from, group_by, limit or select_distinct to use it
   class Query
     include Enumerable
-    def initialize(query_builder = Builder.new)
+    def initialize(query_builder = Builder.new, restforce_client = Restforce.new)
       @query_builder = query_builder
-      @salesforce = Restforce.new
+      @restforce_client = restforce_client
     end
 
     %i[select select_distinct distinct where from group_by limit].each do |method_name|
@@ -28,14 +28,13 @@ module Restforce
     end
 
     def execute
-      return @results if @results.present?
+      return @results unless @results.nil?
       query = @query_builder.to_s
-      Rails.logger.debug(query)
-      @results = @salesforce.query(query)
+      @results = @restforce_client.query(query)
     end
 
-    def each
-      execute
+    def each(&block)
+      execute.each(&block)
     end
 
     def find
